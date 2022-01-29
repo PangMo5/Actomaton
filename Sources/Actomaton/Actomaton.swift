@@ -21,7 +21,7 @@ public actor Actomaton<Action, State>
     private var idTasks: [EffectID: Set<Task<(), Error>>] = [:]
 
     /// Effect-queue-designated tasks for automatic cancellation & suspension.
-    private var queues: [EffectQueue: [Task<(), Error>]] = [:]
+    private var queuedTasks: [EffectQueue: [(id: EffectID, task: Task<(), Error>)]] = [:]
 
     /// Suspended effects.
     private var pendingEffectKinds: [EffectQueue: [Effect<Action>.Kind]] = [:]
@@ -155,10 +155,10 @@ extension Actomaton
         switch queue.effectQueuePolicy {
         case let .runNewest(maxCount):
             // NOTE: +1 to make a space for new effect.
-            let droppingCount = (self.queues[queue]?.count ?? 0) - maxCount + 1
+            let droppingCount = (self.queuedTasks[queue]?.count ?? 0) - maxCount + 1
             if droppingCount > 0 {
                 for _ in 0 ..< droppingCount {
-                    let droppingTask = self.queues[queue]?.removeFirst()
+                    let droppingTask = self.queuedTasks[queue]?.removeFirst().task
                     Debug.print("[checkQueuePolicy] [runNewest] Cancel old task")
                     droppingTask?.cancel()
                 }
@@ -168,12 +168,12 @@ extension Actomaton
             return true
 
         case let .runOldest(maxCount, overflowPolicy):
-            let overflowCount = (self.queues[queue]?.count ?? 0) - maxCount
+            let overflowCount = (self.queuedTasks[queue]?.count ?? 0) - maxCount
             if overflowCount >= 0 {
                 if overflowPolicy == .suspendNew {
                     let queue = queue
                     let maxCount = maxCount
-                    let currentTaskCount = self.queues[queue]?.count ?? 0
+                    let currentTaskCount = self.queuedTasks[queue]?.count ?? 0
 
                     if currentTaskCount >= maxCount {
                         // Enqueue to pending buffer.
@@ -269,7 +269,7 @@ extension Actomaton
 
         if let queue = queue {
             Debug.print("[enqueueTask] Append queue-task: \(queue)")
-            self.queues[queue, default: []].append(task)
+            self.queuedTasks[queue, default: []].append((effectID, task))
         }
 
         // Clean up after `task` is completed.
@@ -311,9 +311,9 @@ extension Actomaton
     private func removeTaskIfNeeded(task: Task<(), Error>, in queue: AnyEffectQueue)
     {
         // NOTE: Finding `removingIndex` and `remove` must be atomic.
-        if let removingIndex = self.queues[queue]?.firstIndex(where: { $0 == task }) {
+        if let removingIndex = self.queuedTasks[queue]?.firstIndex(where: { $0.task == task }) {
             Debug.print("[enqueueTask] Remove completed queue-task: \(queue) \(removingIndex)")
-            self.queues[queue]?.remove(at: removingIndex)
+            self.queuedTasks[queue]?.remove(at: removingIndex)
         }
     }
 
