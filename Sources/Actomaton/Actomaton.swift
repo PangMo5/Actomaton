@@ -18,12 +18,15 @@ public actor Actomaton<Action, State>
     private let reducer: Reducer<Action, State, ()>
 
     /// Effect-identified tasks for manual cancellation.
+    @StateStream
     private var idTasks: [EffectID: Set<Task<(), Error>>] = [:]
 
     /// Effect-queue-designated tasks for automatic cancellation & suspension.
+    @StateStream
     private var queuedTasks: [EffectQueue: [(id: EffectID, task: Task<(), Error>)]] = [:]
 
     /// Suspended effects.
+    @StateStream
     private var pendingEffectKinds: [EffectQueue: [Effect<Action>.Kind]] = [:]
 
     /// Initializer without `environment`.
@@ -213,7 +216,7 @@ extension Actomaton
     }
 
     /// Makes `Task` from `AsyncSequence`.
-    func makeTask(sequence: Effect<Action>._Sequence, priority: TaskPriority?, tracksFeedbacks: Bool) -> Task<(), Error>
+    private func makeTask(sequence: Effect<Action>._Sequence, priority: TaskPriority?, tracksFeedbacks: Bool) -> Task<(), Error>
     {
         let task = Task<(), Error>(priority: priority) { [weak self] in
             do {
@@ -322,5 +325,111 @@ extension Actomaton
         // NOTE: `isEmpty` check and `removeFirst` must be atomic.
         guard self.pendingEffectKinds[queue]?.isEmpty == false else { return nil }
         return self.pendingEffectKinds[queue]?.removeFirst()
+    }
+}
+
+// MARK: - EffectQueueAccessible
+
+private protocol EffectQueueAccessible: Actor
+{
+    /// Dictionary of `EffectID`s and its running task count.
+    var runningEffectIDs: [EffectID: Int] { get }
+
+    /// Dictionary of running `EffectID`s keyed by `EffectQueue`.
+    var runningQueuedEffectIDs: [EffectQueue: [EffectID]]  { get }
+
+    /// Dictionary of running `EffectID`s keyed by `EffectQueue`.
+    var pendingQueuedEffectIDs: [EffectQueue: [EffectID]] { get }
+
+    var runningEffectIDsStream: AsyncStream<[EffectID: Int]> { get }
+    var runningQueuedEffectIDsStream: AsyncStream<[EffectQueue: [EffectID]]> { get }
+    var pendingQueuedEffectIDsStream: AsyncStream<[EffectQueue: [EffectID]]> { get }
+}
+
+extension Actomaton: EffectQueueAccessible
+{
+    /// Dictionary of `EffectID`s and its running task count.
+    internal var runningEffectIDs: [EffectID: Int]
+    {
+        self.idTasks.mapValues { $0.count }
+    }
+
+    /// Dictionary of running `EffectID`s keyed by `EffectQueue`.
+    internal var runningQueuedEffectIDs: [EffectQueue: [EffectID]]
+    {
+        self.queuedTasks.mapValues { $0.map { $0.id } }
+    }
+
+    /// Dictionary of running `EffectID`s keyed by `EffectQueue`.
+    internal var pendingQueuedEffectIDs: [EffectQueue: [EffectID]]
+    {
+        self.pendingEffectKinds.mapValues { $0.compactMap { $0.id } }
+    }
+
+    internal var runningEffectIDsStream: AsyncStream<[EffectID: Int]>
+    {
+        self.$idTasks
+            .map { $0.mapValues { $0.count } }
+            .toUnsafeAsyncStream()
+    }
+
+    internal var runningQueuedEffectIDsStream: AsyncStream<[EffectQueue: [EffectID]]>
+    {
+        self.$queuedTasks
+            .map { $0.mapValues { $0.map { $0.id } } }
+            .toUnsafeAsyncStream()
+    }
+
+    internal var pendingQueuedEffectIDsStream: AsyncStream<[EffectQueue: [EffectID]]>
+    {
+        self.$pendingEffectKinds
+            .map { $0.mapValues { $0.compactMap { $0.id } } }
+            .toUnsafeAsyncStream()
+    }
+}
+
+// MARK: - ActomatonProxy
+
+public struct ActomatonProxy<Action>
+{
+    private weak var actomaton: EffectQueueAccessible?
+
+    private init<A>(actomaton: A) where A: EffectQueueAccessible
+    {
+        self.actomaton = actomaton
+    }
+
+    // MARK: - `AsyncStream`s
+
+    public var runningEffectIDsStream: AsyncStream<[EffectID: Int]>?
+    {
+        get async {
+            await actomaton?.runningEffectIDsStream
+        }
+    }
+
+    // MARK: - Async functions
+
+    public var runningEffectIDs: [EffectID: Int]?
+    {
+        get async {
+            await actomaton?.runningEffectIDs
+        }
+    }
+
+    /// Dictionary of running `EffectID`s keyed by `EffectQueue`.
+    public var runningQueuedEffectIDs: [EffectQueue: [EffectID]]?
+    {
+        get async {
+            await actomaton?.runningQueuedEffectIDs
+        }
+    }
+
+    /// Dictionary of running `EffectID`s keyed by `EffectQueue`.
+    public var pendingQueuedEffectIDs: [EffectQueue: [EffectID]]?
+    {
+        get async {
+            await actomaton?.pendingQueuedEffectIDs
+        }
     }
 }
