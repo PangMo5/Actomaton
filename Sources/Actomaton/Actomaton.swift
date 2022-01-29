@@ -7,12 +7,8 @@ import Foundation
 public actor Actomaton<Action, State>
     where Action: Sendable, State: Sendable
 {
-#if os(Linux)
+    @StateStream
     public private(set) var state: State
-#else
-    @Published
-    public private(set) var state: State
-#endif
 
     /// State-transforming function wrapper that is triggered by Action.
     private let reducer: Reducer<Action, State, ()>

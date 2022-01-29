@@ -2,13 +2,13 @@
 ///
 /// - FIXME: `where Element: Sendable` will cause crash for some reason as of Swift 5.5.1.
 @propertyWrapper
-struct StateStream<Element> /* where Element: Sendable */
+public struct StateStream<Element> /* where Element: Sendable */
 {
     private var currentValue: Element
     private let yield: (Element) -> Void
     private let stream: AsyncStream<Element>
 
-    init(wrappedValue initialValue: Element)
+    public init(wrappedValue initialValue: Element)
     {
         let (stream, yield) = AsyncStream<Element>.makeNonTerminalHotStream()
         self.stream = stream
@@ -16,7 +16,7 @@ struct StateStream<Element> /* where Element: Sendable */
         self.currentValue = initialValue
     }
 
-    var wrappedValue: Element
+    public var wrappedValue: Element
     {
         get {
             self.currentValue
@@ -27,7 +27,7 @@ struct StateStream<Element> /* where Element: Sendable */
         }
     }
 
-    var projectedValue: AsyncStream<Element>
+    public var projectedValue: AsyncStream<Element>
     {
         AsyncStream { [currentValue, stream] continuation in
             let task = Task {

@@ -87,11 +87,11 @@ final class EffectIDAutoCancellationTests: XCTestCase
 
         var cancellables: [AnyCancellable] = []
 
-        await actomaton.$state
-            .sink(receiveValue: { state in
-                Debug.print("publisher: state = \(state)")
-            })
-            .store(in: &cancellables)
+//        await actomaton.$state
+//            .sink(receiveValue: { state in
+//                Debug.print("publisher: state = \(state)")
+//            })
+//            .store(in: &cancellables)
     }
 
     func test_noInterrupt() async throws
