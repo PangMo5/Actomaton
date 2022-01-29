@@ -40,7 +40,7 @@ open class Store<Action, State>: ObservableObject
         )
 
         self.task = Task { [weak self] in
-            guard let stream = await self?.actomaton.$state.toAsyncStream() else { return }
+            guard let stream = await self?.actomaton.$state else { return }
 
             for await state in stream {
                 self?.state = state
