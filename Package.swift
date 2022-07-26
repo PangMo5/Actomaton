@@ -3,18 +3,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "Actomaton",
+    name: "GUActomaton",
     platforms: [.macOS(.v10_15), .iOS(.v13), .watchOS(.v6), .tvOS(.v13)],
     products: [
         .library(
-            name: "Actomaton",
-            targets: ["Actomaton", "ActomatonDebugging"]),
+            name: "GUActomaton",
+            targets: ["GUActomaton", "GUActomatonDebugging"]),
         .library(
-            name: "ActomatonUI",
-            targets: ["ActomatonUI"]),
+            name: "GUActomatonUI",
+            targets: ["GUActomatonUI"]),
         .library(
-            name: "ActomatonStore",
-            targets: ["ActomatonStore", "ActomatonDebugging"])
+            name: "GUActomatonStore",
+            targets: ["GUActomatonStore", "GUActomatonDebugging"])
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-case-paths", from: "0.7.0"),
@@ -22,7 +22,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "Actomaton",
+            name: "GUActomaton",
             dependencies: [.product(name: "CasePaths", package: "swift-case-paths")],
             swiftSettings: [
                 .unsafeFlags([
@@ -32,9 +32,9 @@ let package = Package(
             ]
         ),
         .target(
-            name: "ActomatonStore",
+            name: "GUActomatonStore",
             dependencies: [
-                "Actomaton"
+                "GUActomaton"
             ],
             swiftSettings: [
                 .unsafeFlags([
@@ -44,9 +44,9 @@ let package = Package(
             ]
         ),
         .target(
-            name: "ActomatonUI",
+            name: "GUActomatonUI",
             dependencies: [
-                "Actomaton", "ActomatonDebugging"
+                "GUActomaton", "GUActomatonDebugging"
             ],
             swiftSettings: [
                 .unsafeFlags([
@@ -56,14 +56,14 @@ let package = Package(
             ]
         ),
         .target(
-            name: "ActomatonDebugging",
+            name: "GUActomatonDebugging",
             dependencies: [
-                "Actomaton",
+                "GUActomaton",
                 .product(name: "CustomDump", package: "swift-custom-dump")
             ]),
         .target(
             name: "TestFixtures",
-            dependencies: ["Actomaton"],
+            dependencies: ["GUActomaton"],
             path: "./Tests/TestFixtures",
             swiftSettings: [
                 .unsafeFlags([
@@ -73,8 +73,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "ActomatonTests",
-            dependencies: ["Actomaton", "TestFixtures"],
+            name: "GUActomatonTests",
+            dependencies: ["GUActomaton", "TestFixtures"],
             swiftSettings: [
                 .unsafeFlags([
                     "-Xfrontend", "-warn-concurrency",
@@ -83,8 +83,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "ActomatonStoreTests",
-            dependencies: ["ActomatonStore", "TestFixtures"],
+            name: "GUActomatonStoreTests",
+            dependencies: ["GUActomatonStore", "TestFixtures"],
             swiftSettings: [
                 .unsafeFlags([
                     "-Xfrontend", "-warn-concurrency",
@@ -93,8 +93,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "ActomatonUITests",
-            dependencies: ["ActomatonUI", "TestFixtures"],
+            name: "GUActomatonUITests",
+            dependencies: ["GUActomatonUI", "TestFixtures"],
             swiftSettings: [
                 .unsafeFlags([
                     "-Xfrontend", "-warn-concurrency",
@@ -104,7 +104,7 @@ let package = Package(
         ),
         .testTarget(
             name: "ReadMeTests",
-            dependencies: ["ActomatonStore", "ActomatonDebugging"],
+            dependencies: ["GUActomatonStore", "GUActomatonDebugging"],
             swiftSettings: [
                 .unsafeFlags([
                     "-Xfrontend", "-warn-concurrency",

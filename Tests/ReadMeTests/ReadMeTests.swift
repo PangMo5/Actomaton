@@ -1,6 +1,6 @@
 import XCTest
 @preconcurrency import Foundation
-@testable import Actomaton
+@testable import GUActomaton
 
 import Combine
 
